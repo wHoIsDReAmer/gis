@@ -44,6 +44,9 @@ pub enum Commands {
         /// GitHub 사용자명 (선택사항)
         #[arg(long)]
         github_username: Option<String>,
+        /// GitHub Personal Access Token (선택사항)
+        #[arg(long)]
+        github_pat: Option<String>,
         /// GPG 서명 키 (선택사항)
         #[arg(long)]
         signing_key: Option<String>,
@@ -68,4 +71,22 @@ pub enum Commands {
         /// 제거할 디렉토리 경로
         path: String,
     },
+    /// 크리덴셜 관리
+    Credentials {
+        #[command(subcommand)]
+        action: CredentialAction,
+    },
+}
+
+#[derive(Subcommand)]
+pub enum CredentialAction {
+    /// 캐시된 GitHub 계정들 확인
+    List,
+    /// 특정 GitHub 계정의 크리덴셜 삭제
+    Clear {
+        /// GitHub 사용자명
+        username: String,
+    },
+    /// 모든 GitHub 계정의 크리덴셜 삭제
+    ClearAll,
 }

@@ -21,6 +21,42 @@ pub struct Profile {
     pub ssh_key: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub github_username: Option<String>,
+    /// 암호화된 GitHub Personal Access Token
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub encrypted_pat: Option<String>,
+}
+
+impl Profile {
+    /// PAT가 설정되어 있는지 확인
+    pub fn has_pat(&self) -> bool {
+        self.encrypted_pat.is_some()
+    }
+    
+    /// 암호화된 PAT를 복호화해서 반환
+    pub fn get_decrypted_pat(&self) -> Result<Option<String>> {
+        if let Some(encrypted_pat) = &self.encrypted_pat {
+            let decrypted = crate::crypto::TokenCrypto::decrypt_token(encrypted_pat)?;
+            Ok(Some(decrypted))
+        } else {
+            Ok(None)
+        }
+    }
+    
+    /// PAT를 암호화해서 저장
+    pub fn set_encrypted_pat(&mut self, pat: &str) -> Result<()> {
+        let encrypted = crate::crypto::TokenCrypto::encrypt_token(pat)?;
+        self.encrypted_pat = Some(encrypted);
+        Ok(())
+    }
+    
+    /// 안전하게 마스킹된 PAT 정보 표시
+    pub fn get_masked_pat(&self) -> Option<String> {
+        if let Ok(Some(pat)) = self.get_decrypted_pat() {
+            Some(crate::crypto::TokenCrypto::mask_token(&pat))
+        } else {
+            None
+        }
+    }
 }
 
 impl Config {
@@ -99,6 +135,7 @@ impl Config {
                 signingkey: None,
                 ssh_key: None,
                 github_username: Some("your-github-username".to_string()),
+                encrypted_pat: None,
             },
         );
 
@@ -110,6 +147,7 @@ impl Config {
                 signingkey: None,
                 ssh_key: None,
                 github_username: Some("your-work-username".to_string()),
+                encrypted_pat: None,
             },
         );
 
