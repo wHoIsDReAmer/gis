@@ -1,4 +1,4 @@
-use crate::{error::Error, Result};
+use crate::core::{Error, Result};
 use std::process::Command;
 
 pub struct GitConfig;
@@ -369,7 +369,7 @@ impl GitConfig {
             }
             Err(_) => {
                 // curl이 없으면 기본적인 형식 검증만 수행
-                Ok(crate::crypto::TokenCrypto::validate_github_pat(pat))
+                Ok(crate::utils::crypto::TokenCrypto::validate_github_pat(pat))
             }
         }
     }

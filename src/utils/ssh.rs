@@ -1,4 +1,4 @@
-use crate::{config::Profile, git::GitConfig, Result};
+use crate::{core::Profile, git::GitConfig, core::Result};
 use std::collections::HashMap;
 
 pub struct SshManager;

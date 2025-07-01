@@ -1,4 +1,4 @@
-use crate::{config::Config, error::Error, git::GitConfig, profile::ProfileManager, Result};
+use crate::{core::{Config, Error, ProfileManager, Result}, git::GitConfig};
 
 pub struct AutoDetector;
 

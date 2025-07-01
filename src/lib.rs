@@ -1,10 +1,6 @@
-pub mod auto;
 pub mod cli;
-pub mod config;
-pub mod crypto;
-pub mod error;
+pub mod core;
 pub mod git;
-pub mod profile;
-pub mod ssh;
+pub mod utils;
 
-pub use error::Result;
+pub use core::{Error, Result, Config, Profile, ProfileManager};

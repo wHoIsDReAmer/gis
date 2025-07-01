@@ -1,13 +1,9 @@
 use clap::Parser;
 use git_switcher::{
-    auto::AutoDetector,
     cli::{Cli, Commands, CredentialAction},
-    config::{Config, Profile},
-    profile::ProfileManager,
-    ssh::SshManager,
+    core::{Config, Profile, ProfileManager, Result},
     git::GitConfig,
-    crypto::TokenCrypto,
-    Result,
+    utils::{auto::AutoDetector, ssh::SshManager, crypto::TokenCrypto},
 };
 
 fn main() -> Result<()> {
@@ -56,7 +52,7 @@ fn main() -> Result<()> {
         Commands::Init => {
             match Config::init_default() {
                 Ok(_) => {
-                    let config_path = git_switcher::config::get_config_path()?;
+                    let config_path = git_switcher::core::config::get_config_path()?;
                     println!("✓ 설정 파일이 생성되었습니다: {}", config_path.display());
                     println!("설정 파일을 편집하여 프로필을 수정하세요.");
 
@@ -233,10 +229,10 @@ fn detect_github_username_from_pat(pat: &str) -> Result<String> {
                     }
                 }
             }
-            Err(git_switcher::error::Error::Other("GitHub API 응답 파싱 실패".to_string()))
+            Err(git_switcher::core::Error::Other("GitHub API 응답 파싱 실패".to_string()))
         }
         Err(_) => {
-            Err(git_switcher::error::Error::Other("curl 명령 실행 실패".to_string()))
+            Err(git_switcher::core::Error::Other("curl 명령 실행 실패".to_string()))
         }
     }
 }
