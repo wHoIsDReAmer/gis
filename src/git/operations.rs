@@ -158,7 +158,7 @@ impl GitConfig {
     pub fn clear_all_github_credentials() -> Result<()> {
         if cfg!(windows) {
             let accounts = Self::get_cached_github_accounts()?;
-            
+
             if accounts.is_empty() {
                 println!("  💡 캐시된 GitHub 계정이 없습니다");
             } else {
@@ -177,7 +177,7 @@ impl GitConfig {
     /// Linux/macOS용 크리덴셜 삭제
     fn erase_credentials_for_host_linux(host: &str, username: &str) -> Result<()> {
         use std::io::Write;
-        
+
         let child = Command::new("git")
             .args(&["credential", "erase"])
             .stdin(std::process::Stdio::piped())
@@ -189,7 +189,7 @@ impl GitConfig {
             Ok(mut child) => {
                 if let Some(stdin) = child.stdin.as_mut() {
                     let input = format!("protocol=https\nhost={}\nusername={}\n", host, username);
-                    
+
                     if let Err(_) = stdin.write_all(input.as_bytes()) {
                         println!("  💡 크리덴셜 삭제 입력 실패: {}@{}", username, host);
                         return Ok(());
@@ -210,7 +210,10 @@ impl GitConfig {
                 }
             }
             Err(_) => {
-                println!("  💡 git credential erase 명령 실행 실패: {}@{}", username, host);
+                println!(
+                    "  💡 git credential erase 명령 실행 실패: {}@{}",
+                    username, host
+                );
             }
         }
 
@@ -236,7 +239,7 @@ impl GitConfig {
     /// Windows용 credential 저장
     fn store_credentials_windows(username: &str, pat: &str) -> Result<()> {
         use std::io::Write;
-        
+
         let child = Command::new("git")
             .args(&["credential", "store"])
             .stdin(std::process::Stdio::piped())
@@ -251,7 +254,7 @@ impl GitConfig {
                         "protocol=https\nhost=github.com\nusername={}\npassword={}\n",
                         username, pat
                     );
-                    
+
                     if let Err(e) = stdin.write_all(input.as_bytes()) {
                         println!("  ⚠️  GitHub 크리덴셜 입력 실패: {} ({})", username, e);
                         return Ok(());
@@ -263,16 +266,26 @@ impl GitConfig {
                         if status.success() {
                             println!("  🔑 GitHub 크리덴셜 저장 완료: {}", username);
                         } else {
-                            println!("  ⚠️  GitHub 크리덴셜 저장 실패: {} (exit code: {:?})", username, status.code());
+                            println!(
+                                "  ⚠️  GitHub 크리덴셜 저장 실패: {} (exit code: {:?})",
+                                username,
+                                status.code()
+                            );
                         }
                     }
                     Err(e) => {
-                        println!("  ⚠️  GitHub 크리덴셜 저장 프로세스 대기 실패: {} ({})", username, e);
+                        println!(
+                            "  ⚠️  GitHub 크리덴셜 저장 프로세스 대기 실패: {} ({})",
+                            username, e
+                        );
                     }
                 }
             }
             Err(e) => {
-                println!("  ⚠️  git credential store 명령 실행 실패: {} ({})", username, e);
+                println!(
+                    "  ⚠️  git credential store 명령 실행 실패: {} ({})",
+                    username, e
+                );
             }
         }
 
@@ -283,7 +296,7 @@ impl GitConfig {
     fn store_credentials_linux(username: &str, pat: &str) -> Result<()> {
         use std::fs::OpenOptions;
         use std::io::{BufRead, BufReader, Write};
-        
+
         // credential.helper를 store로 설정
         let _ = Command::new("git")
             .args(&["config", "--global", "credential.helper", "store"])
@@ -302,9 +315,10 @@ impl GitConfig {
                 for line in reader.lines() {
                     if let Ok(line) = line {
                         let line = line.trim();
-                        if !line.is_empty() && 
-                           !line.contains(&format!("://{}@github.com", username)) &&
-                           !line.contains("github.com") {
+                        if !line.is_empty()
+                            && !line.contains(&format!("://{}@github.com", username))
+                            && !line.contains("github.com")
+                        {
                             existing_lines.push(line.to_string());
                         }
                     }
@@ -321,7 +335,7 @@ impl GitConfig {
             .create(true)
             .write(true)
             .truncate(true)
-            .open(&credentials_file) 
+            .open(&credentials_file)
         {
             Ok(mut file) => {
                 for line in existing_lines {
@@ -330,15 +344,17 @@ impl GitConfig {
                         return Ok(());
                     }
                 }
-                
+
                 // 파일 권한을 600으로 설정 (보안)
                 #[cfg(unix)]
                 {
                     use std::os::unix::fs::PermissionsExt;
-                    let _ = std::fs::set_permissions(&credentials_file, 
-                        std::fs::Permissions::from_mode(0o600));
+                    let _ = std::fs::set_permissions(
+                        &credentials_file,
+                        std::fs::Permissions::from_mode(0o600),
+                    );
                 }
-                
+
                 println!("  🔑 GitHub 크리덴셜 저장 완료: {}", username);
                 println!("  📁 저장 위치: {}", credentials_file.display());
             }
@@ -355,10 +371,16 @@ impl GitConfig {
         // GitHub API를 통해 토큰 유효성 검증
         let output = Command::new("curl")
             .args(&[
-                "-s", "-o", "/dev/null", "-w", "%{http_code}",
-                "-H", &format!("Authorization: token {}", pat),
-                "-H", "User-Agent: git-switcher",
-                "https://api.github.com/user"
+                "-s",
+                "-o",
+                "/dev/null",
+                "-w",
+                "%{http_code}",
+                "-H",
+                &format!("Authorization: token {}", pat),
+                "-H",
+                "User-Agent: git-switcher",
+                "https://api.github.com/user",
             ])
             .output();
 

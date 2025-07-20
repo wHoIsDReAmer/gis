@@ -31,7 +31,7 @@ impl Profile {
     pub fn has_pat(&self) -> bool {
         self.encrypted_pat.is_some()
     }
-    
+
     /// 암호화된 PAT를 복호화해서 반환
     pub fn get_decrypted_pat(&self) -> Result<Option<String>> {
         if let Some(encrypted_pat) = &self.encrypted_pat {
@@ -41,14 +41,14 @@ impl Profile {
             Ok(None)
         }
     }
-    
+
     /// PAT를 암호화해서 저장
     pub fn set_encrypted_pat(&mut self, pat: &str) -> Result<()> {
         let encrypted = crate::utils::crypto::TokenCrypto::encrypt_token(pat)?;
         self.encrypted_pat = Some(encrypted);
         Ok(())
     }
-    
+
     /// 안전하게 마스킹된 PAT 정보 표시
     pub fn get_masked_pat(&self) -> Option<String> {
         if let Ok(Some(pat)) = self.get_decrypted_pat() {

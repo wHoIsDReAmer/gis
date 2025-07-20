@@ -1,5 +1,5 @@
-use crate::core::{Profile, Result, Error};
-use crate::git::{GitConfig, CredentialManager};
+use crate::core::{Error, Profile, Result};
+use crate::git::{CredentialManager, GitConfig};
 
 pub struct ProfileManager;
 
@@ -22,13 +22,7 @@ impl ProfileManager {
             GitConfig::set_signing_key(signing_key)?;
         }
 
-        // 4. SSH 연동 또는 HTTPS URL 설정
-        if enable_ssh && profile.ssh_key.is_some() {
-            crate::utils::ssh::SshManager::configure_remotes_for_profile(profile)?;
-        } else {
-            // HTTPS URL에 사용자명 포함 (SSH 없는 경우)
-            CredentialManager::configure_https_remotes_for_profile(profile)?;
-            
+        if !enable_ssh && profile.has_pat() {
             // 5. PAT가 있으면 자동으로 크리덴셜 설정
             CredentialManager::setup_pat_credentials(profile)?;
         }
@@ -73,4 +67,4 @@ impl ProfileManager {
 
         Ok(())
     }
-} 
+}

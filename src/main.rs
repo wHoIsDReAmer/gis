@@ -3,7 +3,7 @@ use git_switcher::{
     cli::{Cli, Commands, CredentialAction},
     core::{Config, Profile, ProfileManager, Result},
     git::GitConfig,
-    utils::{auto::AutoDetector, ssh::SshManager, crypto::TokenCrypto},
+    utils::{auto::AutoDetector, crypto::TokenCrypto, ssh::SshManager},
 };
 
 fn main() -> Result<()> {
@@ -107,7 +107,10 @@ fn main() -> Result<()> {
                 // PAT를 암호화해서 저장
                 match profile.set_encrypted_pat(&pat) {
                     Ok(_) => {
-                        println!("🔑 GitHub PAT가 암호화되어 저장되었습니다: {}", TokenCrypto::mask_token(&pat));
+                        println!(
+                            "🔑 GitHub PAT가 암호화되어 저장되었습니다: {}",
+                            TokenCrypto::mask_token(&pat)
+                        );
                     }
                     Err(e) => {
                         eprintln!("❌ PAT 암호화 실패: {}", e);
@@ -125,7 +128,10 @@ fn main() -> Result<()> {
                 }
             } else if github_username.is_some() {
                 println!("💡 GitHub PAT를 나중에 추가하려면:");
-                println!("  git-switcher add {} --github-pat <YOUR_PAT> (기존 프로필 업데이트)", name);
+                println!(
+                    "  git-switcher add {} --github-pat <YOUR_PAT> (기존 프로필 업데이트)",
+                    name
+                );
             }
 
             config.add_profile(name.clone(), profile);
@@ -165,40 +171,38 @@ fn main() -> Result<()> {
             }
         }
 
-        Commands::Credentials { action } => {
-            match action {
-                CredentialAction::List => {
-                    println!("🔍 캐시된 GitHub 계정들:");
-                    match GitConfig::get_cached_github_accounts() {
-                        Ok(accounts) => {
-                            if accounts.is_empty() {
-                                println!("  (캐시된 계정이 없습니다)");
-                            } else {
-                                for account in accounts {
-                                    println!("  - {}", account);
-                                }
+        Commands::Credentials { action } => match action {
+            CredentialAction::List => {
+                println!("🔍 캐시된 GitHub 계정들:");
+                match GitConfig::get_cached_github_accounts() {
+                    Ok(accounts) => {
+                        if accounts.is_empty() {
+                            println!("  (캐시된 계정이 없습니다)");
+                        } else {
+                            for account in accounts {
+                                println!("  - {}", account);
                             }
                         }
-                        Err(e) => {
-                            println!("  ❌ 계정 목록 조회 실패: {}", e);
-                        }
+                    }
+                    Err(e) => {
+                        println!("  ❌ 계정 목록 조회 실패: {}", e);
                     }
                 }
-
-                CredentialAction::Clear { username } => {
-                    println!("🔧 계정 '{}' 크리덴셜 삭제 중...", username);
-                    GitConfig::clear_github_credentials(&username)?;
-                    let _ = GitConfig::erase_credentials_for_host("github.com", &username);
-                    println!("✓ 계정 '{}' 크리덴셜이 삭제되었습니다.", username);
-                }
-
-                CredentialAction::ClearAll => {
-                    println!("🔧 모든 GitHub 계정 크리덴셜 삭제 중...");
-                    GitConfig::clear_all_github_credentials()?;
-                    println!("✓ 모든 GitHub 계정 크리덴셜이 삭제되었습니다.");
-                }
             }
-        }
+
+            CredentialAction::Clear { username } => {
+                println!("🔧 계정 '{}' 크리덴셜 삭제 중...", username);
+                GitConfig::clear_github_credentials(&username)?;
+                let _ = GitConfig::erase_credentials_for_host("github.com", &username);
+                println!("✓ 계정 '{}' 크리덴셜이 삭제되었습니다.", username);
+            }
+
+            CredentialAction::ClearAll => {
+                println!("🔧 모든 GitHub 계정 크리덴셜 삭제 중...");
+                GitConfig::clear_all_github_credentials()?;
+                println!("✓ 모든 GitHub 계정 크리덴셜이 삭제되었습니다.");
+            }
+        },
     }
 
     Ok(())
@@ -207,13 +211,15 @@ fn main() -> Result<()> {
 /// GitHub API를 통해 PAT에서 사용자명 추출
 fn detect_github_username_from_pat(pat: &str) -> Result<String> {
     use std::process::Command;
-    
+
     let output = Command::new("curl")
         .args(&[
             "-s",
-            "-H", &format!("Authorization: token {}", pat),
-            "-H", "User-Agent: git-switcher",
-            "https://api.github.com/user"
+            "-H",
+            &format!("Authorization: token {}", pat),
+            "-H",
+            "User-Agent: git-switcher",
+            "https://api.github.com/user",
         ])
         .output();
 
@@ -225,14 +231,16 @@ fn detect_github_username_from_pat(pat: &str) -> Result<String> {
                 if let Some(start) = response.find("\"login\":\"") {
                     let start = start + 9;
                     if let Some(end) = response[start..].find("\"") {
-                        return Ok(response[start..start+end].to_string());
+                        return Ok(response[start..start + end].to_string());
                     }
                 }
             }
-            Err(git_switcher::core::Error::Other("GitHub API 응답 파싱 실패".to_string()))
+            Err(git_switcher::core::Error::Other(
+                "GitHub API 응답 파싱 실패".to_string(),
+            ))
         }
-        Err(_) => {
-            Err(git_switcher::core::Error::Other("curl 명령 실행 실패".to_string()))
-        }
+        Err(_) => Err(git_switcher::core::Error::Other(
+            "curl 명령 실행 실패".to_string(),
+        )),
     }
 }

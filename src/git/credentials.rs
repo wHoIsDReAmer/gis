@@ -6,23 +6,23 @@ pub struct CredentialManager;
 impl CredentialManager {
     /// PAT 크리덴셜 자동 설정
     pub fn setup_pat_credentials(profile: &Profile) -> Result<()> {
-        if let Some(github_username) = &profile.github_username {
-            if let Ok(Some(pat)) = profile.get_decrypted_pat() {
-                println!("  🔑 GitHub PAT 자동 설정 중...");
-                
-                // PAT 유효성 검증
-                match GitConfig::test_github_pat(github_username, &pat) {
-                    Ok(true) => {
-                        GitConfig::store_github_credentials(github_username, &pat)?;
-                    }
-                    Ok(false) => {
-                        println!("  ⚠️  PAT가 유효하지 않을 수 있습니다. 수동으로 확인해주세요.");
-                        GitConfig::store_github_credentials(github_username, &pat)?;
-                    }
-                    Err(_) => {
-                        // 검증 실패해도 저장은 시도
-                        GitConfig::store_github_credentials(github_username, &pat)?;
-                    }
+        if let Some(github_username) = &profile.github_username
+            && let Ok(Some(pat)) = profile.get_decrypted_pat()
+        {
+            println!("  🔑 GitHub PAT 자동 설정 중...");
+
+            // PAT 유효성 검증
+            match GitConfig::test_github_pat(github_username, &pat) {
+                Ok(true) => {
+                    GitConfig::store_github_credentials(github_username, &pat)?;
+                }
+                Ok(false) => {
+                    println!("  ⚠️  PAT가 유효하지 않을 수 있습니다. 수동으로 확인해주세요.");
+                    GitConfig::store_github_credentials(github_username, &pat)?;
+                }
+                Err(_) => {
+                    // 검증 실패해도 저장은 시도
+                    GitConfig::store_github_credentials(github_username, &pat)?;
                 }
             }
         }
@@ -35,7 +35,7 @@ impl CredentialManager {
         if let Some(github_username) = &profile.github_username {
             // 1. Git Credential Manager에서 GitHub 계정 삭제 시도
             GitConfig::clear_github_credentials(github_username)?;
-            
+
             // 2. 일반 크리덴셜 삭제도 시도 (Windows/Linux 호환성)
             let _ = GitConfig::erase_credentials_for_host("github.com", github_username);
         }
@@ -54,46 +54,6 @@ impl CredentialManager {
         Ok(())
     }
 
-    /// HTTPS URL 리모트 설정
-    pub fn configure_https_remotes_for_profile(profile: &Profile) -> Result<()> {
-        let remotes = GitConfig::get_remotes()?;
-
-        for (remote_name, url) in &remotes {
-            if let Some(new_url) = Self::transform_url_for_https(url, profile) {
-                GitConfig::set_remote_url(remote_name, &new_url)?;
-                println!("  {} 리모트 URL 변경: {} -> {}", remote_name, url, new_url);
-            }
-        }
-
-        Ok(())
-    }
-
-    fn transform_url_for_https(url: &str, profile: &Profile) -> Option<String> {
-        // GitHub/GitLab HTTPS URL에 사용자명 추가
-        if url.starts_with("https://github.com/") && !url.contains("@") {
-            // github_username이 있으면 사용, 없으면 URL에서 추출
-            let username = if let Some(gh_username) = &profile.github_username {
-                gh_username.clone()
-            } else {
-                Self::extract_username_from_url(url)?
-            };
-            let repo_path = url.replace("https://github.com/", "");
-            return Some(format!("https://{}@github.com/{}", username, repo_path));
-        }
-
-        if url.starts_with("https://gitlab.com/") && !url.contains("@") {
-            let username = if let Some(gh_username) = &profile.github_username {
-                gh_username.clone()
-            } else {
-                Self::extract_username_from_url(url)?
-            };
-            let repo_path = url.replace("https://gitlab.com/", "");
-            return Some(format!("https://{}@gitlab.com/{}", username, repo_path));
-        }
-
-        None
-    }
-
     fn extract_username_from_url(url: &str) -> Option<String> {
         // URL에서 실제 사용자명 추출
         // 예: https://github.com/whoisdreamer/blog → whoisdreamer
@@ -105,4 +65,4 @@ impl CredentialManager {
         }
         None
     }
-} 
+}
